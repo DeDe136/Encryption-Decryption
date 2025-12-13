@@ -1,0 +1,254 @@
+Dưới đây là phần **giải thích chi tiết – dễ hiểu – đúng theo Lab06** cho **Thuật toán thứ 2: Mono-alphabetic Substitution Cipher**, kèm theo **giải thích đề bài**, **cách giải nhiều hình thức**, **không cần code**.
+
+---
+
+# ⭐ 1) Giải thích thuật toán: **Mono-alphabetic Substitution Cipher**
+
+## 🔹 Khái niệm cơ bản
+
+Mono-alphabetic substitution (mã hoán vị 1 bảng chữ cái) là thuật toán mã hóa thay thế **mỗi chữ cái trong plaintext bằng một chữ cái khác**, dựa trên **bảng ánh xạ 1–1 (permulation)**.
+
+Ví dụ một bảng hoán vị:
+
+Plaintext alphabet:
+
+```
+abcdefghijklmnopqrstuvwxyz
+```
+
+Ciphertext alphabet (random permutation):
+
+```
+qwertyuiopasdfghjklzxcvbnm
+```
+
+Nghĩa là:
+
+```
+p → q
+l → k
+a → q
+...
+```
+
+📌 **Mỗi chữ cái plaintext được thay thế bằng đúng 1 ký tự ciphertext.**
+📌 Và không thể có hai plaintext map vào cùng một ciphertext (injective).
+
+Đây là dạng mở rộng của Caesar Cipher (Caesar là 1 trường hợp đặc biệt của hoán vị).
+
+---
+
+## 🔹 Không gian khóa cực lớn
+
+* Số lượng hoán vị có thể:
+  **26! ≈ 4 × 10³⁰** (khổng lồ)
+
+Vì vậy không thể brute-force tất cả khóa như Caesar (chỉ 26 khóa).
+
+Do đó phải dùng:
+
+* Frequency analysis
+* Heuristics
+* Hill-climbing, simulated annealing
+* N-gram scoring
+
+---
+
+## 🔹 Đặc điểm quan trọng
+
+1. **Tần suất chữ cái được giữ lại**, nhưng bị hoán đổi (ví dụ ciphertext có chữ "x" xuất hiện nhiều nghĩa là plaintext có thể là "e").
+2. **Cấu trúc bigram/trigram** cũng được giữ (ví dụ “th”, “he”, “in”, “tion”).
+3. Vì plaintext là English, ta có thể đo “độ tự nhiên” (English-likeness).
+
+---
+
+## 🔹 Ví dụ minh họa đơn giản
+
+Plaintext:
+
+```
+we attack at dawn
+```
+
+Mapping ví dụ:
+
+```
+w→m, e→q, a→r, t→p, c→u, k→l, d→s, n→v
+```
+
+Ciphertext:
+
+```
+mq rppmrp rp smvl
+```
+
+Bạn không biết mapping nên phải khôi phục bằng phân tích tần suất.
+
+---
+
+# ⭐ 2) Giải thích đúng theo đề bài Lab06 (Task 2)
+
+### 🎯 Input
+
+* Một file ciphertext mã hóa bằng mono-alphabetic substitution
+* Độ dài > 5000 chữ
+* Chỉ thay thế **chữ thường a–z** (chữ hoa giữ nguyên hoặc chuyển về lowercase)
+
+### 🎯 Output yêu cầu
+
+1. **Dòng 1:** điểm hoặc log-likelihood (nếu có)
+2. **Dòng 2:** mapping từ ciphertext → plaintext (ví dụ: `q→e, w→t, ...`)
+3. **Dòng 3 trở đi:** plaintext đã khôi phục
+
+### 🎯 Ghi chú
+
+* Chỉ thay thế chữ thường a–z
+* Ký tự khác giữ nguyên
+* Plaintext là một bài báo tiếng Anh (rất quan trọng → dễ phân tích tần suất)
+
+---
+
+# ⭐ 3) Các cách giải quyết vấn đề (không cần code) — nhiều hình thức
+
+Dưới đây là **6 phương pháp** có thể dùng để giải Task 2, từ cơ bản đến nâng cao.
+Bạn có thể chọn 1 hoặc kết hợp nhiều kỹ thuật để viết báo cáo và thực hiện.
+
+---
+
+# 🔥 **Cách 1 — Frequency Analysis (phân tích tần suất)**
+
+**Ý tưởng:**
+
+* Tính tần suất từng ký tự trong ciphertext
+* So sánh với tần suất chuẩn của tiếng Anh (`e,t,a,o,i,n,s,r,h,l,...`)
+* Gợi ý map ban đầu
+
+### Bước thực hiện:
+
+1. Đếm tần suất 26 chữ cái trong ciphertext.
+2. Sắp xếp theo độ xuất hiện.
+3. Gán chữ xuất hiện nhiều nhất → “e”, chữ xuất hiện thứ hai → “t”, ...
+
+### Ưu điểm:
+
+* Rất nhanh, dễ làm.
+* Cho ra **seed mapping** tốt (mapping ban đầu).
+
+### Nhược điểm:
+
+* Không chính xác 100%.
+* Không xử lý được bigram hoặc word structure.
+
+→ Dùng làm bước **khởi tạo** trước khi refine (tinh chỉnh).
+
+---
+
+# 🔥 **Cách 2 — Bigram / Trigram Frequency**
+
+**Ý tưởng:**
+Dựa trên tần suất của cặp chữ cái (“th”, “he”, “in”, “er”, “an”…).
+
+### Bước thực hiện:
+
+1. Tính tần suất bigram/trigram trong ciphertext.
+2. So sánh với bảng chuẩn tiếng Anh.
+3. Tinh chỉnh mapping:
+
+   * Nếu ciphertext chứa nhiều “xy” nhưng tiếng Anh nhiều “th” → gán “xy” → “th”.
+
+### Ưu điểm:
+
+* Giúp sửa lỗi mapping sai ở frequency đơn.
+
+### Nhược điểm:
+
+* Cần bảng thống kê bigram/trigram chuẩn.
+
+---
+
+# 🔥 **Cách 3 — Word Pattern Matching**
+
+**Ý tưởng:**
+Dựa vào hình dạng từ (pattern), ví dụ:
+
+* “the” → pattern = 0-1-2
+* “that” → pattern = 0-1-2-1
+* “apple” → 0-1-1-2-3
+
+Trong ciphertext, nếu gặp từ pattern 0-1-2 rất nhiều → rất có thể là “the”.
+
+### Các bước:
+
+1. Tạo các pattern cho từ phổ biến: the, and, that, this, is, are, …
+2. Quét ciphertext
+3. Với từ có pattern giống → đoán mapping tương ứng
+4. Cập nhật bảng mapping
+
+### Ưu điểm:
+
+* Rất mạnh khi ciphertext dài >5000 chữ.
+* Nhận diện từ quen thuộc ngay lập tức (“the”, “and”, …).
+
+---
+
+# 🔥 **Cách 4 — Hill-Climbing Optimization (kỹ thuật đỉnh dốc)**
+
+⚠️ Đây là **cách tốt nhất và chính xác nhất** khi không dùng code mã hóa có sẵn.
+
+**Ý tưởng tổng quát:**
+
+1. Bắt đầu từ mapping ban đầu (frequency analysis).
+2. Đảo 2 ký tự trong mapping (swap).
+3. Tính điểm (scoring) dựa trên n-gram likelihood.
+4. Nếu score cao hơn → giữ mapping mới.
+5. Lặp lại hàng ngàn lần.
+
+Đây là cách các tool giải mã tự động (như **Substitution Solver**) hoạt động.
+
+### Ưu điểm:
+
+* Cực kỳ chính xác khi ciphertext dài.
+* Được dùng trong nghiên cứu mật mã cổ điển.
+
+### Nhược điểm:
+
+* Dài và phức tạp nếu code, nhưng bạn không cần code → chỉ hiểu phương pháp.
+
+---
+
+# 🔥 **Cách 5 — Simulated Annealing (tối ưu hóa nhiệt độ)**
+
+Giống hill climbing nhưng cho phép “nhảy” sang trạng thái tệ hơn để thoát local maxima.
+
+→ Bạn chỉ cần mô tả quá trình:
+
+* Có nhiệt độ T
+* T giảm theo thời gian
+* Một số hoán đổi được chấp nhận dù score giảm
+* Cuối cùng đạt kết quả tốt nhất
+
+### Ưu điểm:
+
+* Tìm được mapping tối ưu
+
+### Nhược điểm:
+
+* Thường kết hợp cùng hill-climbing.
+
+---
+
+# 🔥 **Cách 6 — Dựa vào từ phổ biến (Common word spotting)**
+
+Bạn tìm các từ xuất hiện nhiều:
+
+* “the”
+* “and”
+* “that”
+* “this”
+* “is”
+* “are”
+
+Sau đó kiểm tra ciphertext xem có từ 3 chữ dạng `aba`, `abb`, `abc`, …
+
+Ví dụ: ciphertext có từ thường xuất hiện dạng `_ _ _` giống pattern của "the".
+

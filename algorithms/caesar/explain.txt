@@ -1,0 +1,142 @@
+
+Khái niệm cơ bản
+
+Caesar cipher là một dạng substitution cipher đơn giản: mỗi chữ cái trong plaintext được dịch (shift) một số vị trí cố định k trong bảng chữ cái Latin.
+
+Ví dụ với k = 3: A → D, B → E, ..., X → A, Y → B, Z → C.
+
+Thường làm vòng (mod 26). Với chữ thường/hoa xử lý tương tự nhưng tách biệt (không đổi case).
+
+Toán học ngắn gọn
+
+Mã hóa: C = (P + k) mod 26.
+
+Giải mã: P = (C - k) mod 26.
+
+Ký tự không phải chữ cái (dấu câu, khoảng trắng, số) giữ nguyên theo đề bài.
+
+Không gian khóa
+
+k ∈ {0,1,...,25} — có 26 khóa khả dĩ. Đây là không gian rất nhỏ → dễ bị tấn công bằng brute-force.
+
+Các tính chất quan trọng
+
+Giữ nguyên tần suất chữ cái: tần suất các chữ cái trong ciphertext là dịch tương ứng so với plaintext (ví dụ chữ cái hay nhất e sẽ xuất hiện ở vị trí e+k).
+
+Nếu plaintext là tiếng Anh dài (> vài nghìn ký tự) thì tần suất đủ để dùng phân tích tần suất (frequency analysis).
+
+2) Đề bài (như Lab06 yêu cầu, tóm tắt cho Task 1)
+
+Input: file ciphertext (>5000 chữ) mã hoá bằng Caesar.
+
+Yêu cầu: Viết chương trình (ở đây bạn chỉ cần hiểu cách giải, không code) tìm một plaintext duy nhất bằng cách thử tất cả khóa khả dĩ.
+
+Output: file plaintext chứa:
+
+Dòng đầu: khóa k (số nguyên 0–25)
+
+Dòng tiếp: plaintext đã giải mã
+
+Ghi chú: chỉ dịch các chữ cái Latin A–Z / a–z; giữ nguyên khoảng trắng và dấu câu.
+
+3) Các phương thức giải quyết (không cần code) — nhiều hình thức, ưu/nhược, bước thực hiện
+
+Mình sẽ mô tả 5 cách giải — từ đơn giản nhất (brute-force) đến phức tạp hơn (phân tích tần suất, scoring, giao diện tương tác, hybrid). Mỗi cách kèm các bước thực hiện và cách kiểm chứng kết quả.
+
+A — Cách 1 (bắt buộc / đơn giản nhất): Brute-force (thử tất cả 26 khóa)
+
+Ý tưởng: Thử k = 0..25, mỗi k tạo 1 bản giải mã; chọn bản đọc được (độc nhất) là plaintext.
+
+Các bước thực hiện (không code)
+
+Đọc ciphertext (UTF-8).
+
+Với từng k từ 0 đến 25:
+
+Dịch từng ký tự Latin: nếu là a..z hoặc A..Z, áp công thức P = (C - k) mod 26, giữ case. Nếu không phải chữ cái, giữ nguyên.
+
+Lưu kết quả vào một biến / file tạm với annotation k.
+
+Kiểm tra 26 bản plaintext thu được, chọn bản “hợp lệ” nhất.
+
+Cách xác định bản đúng (thủ công):
+
+Mở từng bản, đọc xem cái nào có câu, từ hợp lý tiếng Anh. Với ciphertext >5000 chữ, bản đúng thường rõ ràng (câu hợp lý, nhiều từ tiếng Anh).
+
+Nếu tự động: kiểm tra tỉ lệ từ có trong dictionary tiếng Anh (xem phần scoring dưới).
+
+Ưu điểm: Dễ thực hiện, chắc chắn tìm ra plaintext nếu ciphertext là Caesar.
+Nhược điểm: Nếu muốn tự động hoàn toàn cần phương pháp đánh giá (score).
+
+B — Cách 2: Brute-force + Dictionary scoring (tự động)
+
+Ý tưởng: Thử 26 khóa, dùng danh sách từ (English wordlist) để tính tỷ lệ “từ hợp lệ” trong mỗi bản, chọn k có tỉ lệ cao nhất.
+
+Bước thực hiện (khái quát):
+
+Chuẩn hoá: chuyển tất cả chữ thường để so sánh dễ hơn (hoặc giữ case và tách từ).
+
+Phân tách bản giải thành token (split by whitespace/punctuation).
+
+Với mỗi bản (k):
+
+Đếm số token xuất hiện trong wordlist (ví dụ top 50k English words).
+
+Tính score = số từ hợp lệ / tổng token.
+
+Chọn k có score cao nhất (thường sẽ rất cao với plaintext đúng).
+
+Ưu/Nhược:
+
+Tự động, phù hợp để xử lý lượng lớn file.
+
+Cần wordlist (có thể dùng wordlist chuẩn như word frequency lists).
+
+Không mạnh nếu văn bản chứa nhiều tên riêng, thuật ngữ kỹ thuật, hoặc tiếng Anh không chuẩn.
+
+C — Cách 3: Brute-force + N-gram / language model scoring
+
+Ý tưởng: Dùng mô hình ngôn ngữ (biểu đồ tần suất unigram/bigram/trigram) để chấm điểm bản giải; chọn bản có likelihood/ngôn ngữ score cao nhất.
+
+Bước thực hiện tóm tắt:
+
+Chuẩn bị dữ liệu tham chiếu: tần suất bigram/trigram tiếng Anh (các bảng tần suất có sẵn trong lý thuyết).
+
+Với mỗi bản giải (k):
+
+Tính log-likelihood dựa trên n-gram: cộng log P(ngram) cho mọi n-gram trong text.
+
+Chọn k có score lớn nhất.
+
+Ưu điểm: Hoạt động tốt hơn dictionary khi có nhiều từ lạ; phản ánh cấu trúc ngôn ngữ.
+Nhược điểm: Cần dữ liệu n-gram; phức tạp hơn nhưng vẫn dễ thực hiện.
+
+D — Cách 4: Phân tích tần suất + phỏng đoán (heuristic)
+
+Ý tưởng: Vì Caesar chỉ dịch tần suất, ta có thể kiểm tra letter frequency trong ciphertext và suy ra k bằng cách so sánh vị trí chữ cái phổ biến nhất với e (chữ cái phổ biến nhất trong tiếng Anh).
+
+Bước thực hiện:
+
+Tính tần suất từng chữ cái (ignore case).
+
+Tìm chữ cái có tần suất cao nhất trong ciphertext, ký hiệu là C_max.
+
+Ước lượng k ≈ (C_max - 'e') mod 26 (hoặc so sánh với những chữ cái thường xuất hiện như e, t, a, o nếu cần).
+
+Dùng k thu được để giải mã. Kiểm tra kết quả.
+
+Ưu điểm: Rất nhanh, không cần thử 26 lần (thực ra vẫn thử 1).
+Nhược điểm: Nếu tiếng Anh trong text khác thường (ví dụ chủ đề lặp lại chữ cái khác) có thể sai; do đó thường dùng kết hợp với brute-force.
+
+E — Cách 5: Thủ công tương tác (giải mã bằng mắt)
+
+Ý tưởng: Mở ciphertext, tự thử một vài k (thường 1–5) hoặc dựa trên pattern của một từ ngắn (ví dụ tìm the, and).
+
+Khi dùng:
+
+Tìm các từ phổ biến (mẫu x y z hoặc ...), thử dịch sao cho các từ xuất hiện hợp lý (ví dụ phần wklv → thử k=3 để thấy this).
+
+Dùng khi người muốn hiểu logic, không lập trình.
+
+Ưu điểm: Tốt cho học tập.
+Nhược điểm: Không tự động, lâu với text lớn.

@@ -1,0 +1,233 @@
+Dưới đây là phần **giải thích chi tiết – đầy đủ – dễ hiểu** cho **Thuật toán thứ 3: Vigenère Cipher**, đúng theo yêu cầu Lab06.
+Mình sẽ trình bày theo 3 phần như trước:
+
+1. **Giải thích thuật toán**
+2. **Giải thích đề bài**
+3. **Nhiều phương pháp giải bài (không dùng code)**
+
+---
+
+# ⭐ 1) GIẢI THUẬT TOÁN: **Vigenère Cipher** (Mật mã đa bảng – polyalphabetic)
+
+## 🔹 Khái niệm tổng quan
+
+Vigenère cipher là mật mã **đa bảng chữ cái** dùng một **key (chuỗi ký tự)** để thay đổi phép dịch Caesar theo vị trí.
+
+* Nếu Caesar cipher dịch toàn bộ văn bản theo 1 khóa k,
+* Thì Vigenère cipher sử dụng **một chuỗi khóa lặp lại**, mỗi ký tự trong khóa tương ứng với 1 phép dịch khác nhau.
+
+Đây là một dạng polyalphabetic substitution → mạnh hơn Caesar nhiều lần.
+
+---
+
+## 🔹 Cách mã hóa
+
+Giả sử:
+
+* Plaintext: `ATTACKATDAWN`
+* Key: `LEMON`
+
+Trước khi mã hóa, key được lặp lại:
+
+* Key lặp: `LEMONLEMONLE`
+
+Trong đó mỗi ký tự được ánh xạ thành số (A=0, B=1, …, Z=25)
+
+Ví dụ:
+
+* 'L' = 11
+* 'E' = 4
+* 'M' = 12
+* 'O' = 14
+* 'N' = 13
+
+Công thức mã hóa (giống Caesar nhưng thay khóa theo vị trí):
+
+```
+C[i] = (P[i] + K[i]) mod 26
+```
+
+Ví dụ:
+A (0) + L (11) = 11 → L
+T (19) + E (4) = 23 → X
+…
+
+Ciphertext thu được:
+
+```
+LXFOPVEFRNHR
+```
+
+---
+
+## 🔹 Cách giải mã
+
+```
+P[i] = (C[i] - K[i] + 26) mod 26
+```
+
+---
+
+## 🔹 Điểm mạnh
+
+* Khó bị phá hơn Caesar vì không có tần suất cố định → mỗi vị trí dùng một bảng dịch khác nhau.
+
+## 🔹 Điểm yếu
+
+Khi khóa lặp, ta có thể tìm **độ dài khóa** → chia chuỗi thành nhiều chuỗi Caesar → phá như Caesar.
+
+---
+
+# ⭐ 2) GIẢI THÍCH ĐỀ BÀI LAB06 (Task 3)
+
+### 🎯 Input
+
+* Một file ciphertext mã hóa bằng Vigenère
+* Dung lượng > 5000 chữ
+
+### 🎯 Output
+
+1. Dòng đầu tiên: khóa (key) tìm được
+2. Các dòng tiếp theo: plaintext đã được giải mã
+
+### 🎯 Yêu cầu kỹ thuật
+
+* Chỉ dịch chữ cái Latin (A–Z hoặc a–z)
+* Giữ nguyên dấu cách, dấu câu
+* Không biết độ dài khóa (đây là phần khó)
+* Plaintext là bài báo tiếng Anh
+
+### 🎯 Gợi ý bắt buộc
+
+* Kasiski examination
+* Index of Coincidence (IC)
+* Frequency analysis trên từng “Caesar subset”
+
+---
+
+# ⭐ 3) NHIỀU PHƯƠNG PHÁP GIẢI (không cần code)
+
+Dưới đây là **5 cách giải mã Vigenère** theo mức độ chuẩn xác từ cơ bản đến nâng cao.
+
+---
+
+# 🔥 Cách 1 — **Kasiski Examination** (phương pháp cổ điển)
+
+**Ý tưởng chính:**
+
+* Tìm các **chuỗi lặp lại** trong ciphertext (ví dụ “ABC”, “XYZ”)
+* Đo khoảng cách giữa các lần xuất hiện
+* Ước lượng độ dài khóa bằng **ước số chung** của các khoảng cách.
+
+### Ví dụ minh họa:
+
+Ciphertext chứa chuỗi lặp:
+
+```
+… ABC … (khoảng cách 48) … ABC … (khoảng cách 96) …
+```
+
+Ước số của 48 và 96 là:
+
+```
+1, 2, 3, 4, 6, 8, 12, 16, 24, 48
+```
+
+→ Độ dài khóa có thể là 6, 8, 12, 24 (chọn giá trị hợp lý nhất dựa trên IC).
+
+### Ưu điểm:
+
+* Tìm độ dài khóa rất tốt khi text > 5000 chữ
+* Rất mạnh trong bài lab vì plaintext là tiếng Anh chuẩn
+
+### Nhược điểm:
+
+* Cần nhiều chuỗi lặp, đôi khi không có đủ.
+
+---
+
+# 🔥 Cách 2 — **Index of Coincidence (IC)** (hướng thống kê mạnh nhất)
+
+IC đo độ “tiếng Anh” của một chuỗi:
+
+* Tiếng Anh có IC ~ **0.065**
+* Chuỗi random có IC ~ **0.038**
+
+### Cách làm:
+
+1. Thử độ dài khóa từ 1 → N (ví dụ 1 → 20)
+2. Với mỗi độ dài k:
+
+   * Chia ciphertext thành k chuỗi con (split theo modulo)
+   * Tính IC của từng chuỗi
+   * Lấy trung bình
+
+### Quy tắc chọn:
+
+* Độ dài khóa **đúng** sẽ cho IC gần 0.065
+* Độ dài khóa **sai** sẽ cho IC gần 0.038
+
+### Ưu điểm:
+
+* Rất chính xác
+* Hoạt động tốt dù Kasiski không tìm được chuỗi lặp
+
+---
+
+# 🔥 Cách 3 — Chia ciphertext thành các **Caesar Subsets**
+
+Khi biết hoặc ước lượng được độ dài khóa `k`:
+
+* Tạo `k` chuỗi con:
+
+  * Subset 0: C[0], C[k], C[2k], C[3k], …
+  * Subset 1: C[1], C[k+1], C[2k+1], …
+  * ...
+  * Subset (k-1)...
+
+→ Mỗi chuỗi con được mã hóa bằng **1 Caesar cipher với khóa riêng**.
+
+### Cách giải từng subset:
+
+* Frequency analysis
+* Bigram/trigram
+* Chi tiết phân phối chữ cái
+* So sánh với tần suất “e”, “t”, “a”
+
+Sau đó ghép từng khóa nhỏ → tạo key đầy đủ (ví dụ key = “LEMON”).
+
+---
+
+# 🔥 Cách 4 — Frequency Analysis theo vector dịch
+
+Khi có subset, ta tìm khóa bằng cách:
+
+1. Thử dịch subset bằng Caesar với mọi dịch chuyển 0..25
+2. Đánh giá bản decode bằng:
+
+   * Tần suất e,t,a,o
+   * Bigrams
+   * Word-likelihood
+3. Chọn khóa cho subset có score cao nhất
+
+Cuối cùng ghép 26 khóa lại → ra key.
+
+---
+
+# 🔥 Cách 5 — Sử dụng n-gram scoring + hill climbing (mạnh nhất)
+
+Giống bài 2 nhưng áp dụng cho từng subset.
+
+Kỹ thuật:
+
+* Tìm key length bằng IC
+* Dùng hill-climbing để tối ưu từng ký tự khóa
+* Assignment nào cho plaintext tiếng Anh tự nhiên nhất → khóa đúng
+
+### Ưu điểm:
+
+* Cách mạnh nhất khi ciphertext cực dài (bài lab >5000 chữ)
+* Log-likelihood giúp tự động tìm key
+
+---
+
