@@ -1,6 +1,6 @@
 """
-Caesar Cipher - Brute Force Attack
-Thuật toán: Thử tất cả 26 khóa có thể và chọn kết quả hợp lý nhất
+Caesar Cipher - Brute Force Attack (Improved Version)
+Cải tiến: Thêm bigram analysis và cải thiện scoring mechanism
 """
 
 class CaesarCipher:
@@ -14,12 +14,20 @@ class CaesarCipher:
             'v': 0.98, 'k': 0.77, 'j': 0.15, 'x': 0.15, 'q': 0.10, 'z': 0.07
         }
         
+        # Bigrams phổ biến trong tiếng Anh
+        self.common_bigrams = {
+            'th', 'he', 'in', 'er', 'an', 're', 'on', 'at', 'en', 'nd',
+            'ti', 'es', 'or', 'te', 'of', 'ed', 'is', 'it', 'al', 'ar',
+            'st', 'to', 'nt', 'ng', 'se', 'ha', 'as', 'ou', 'io', 'le'
+        }
+        
         # Từ phổ biến để kiểm tra
         self.common_words = {
             'the', 'be', 'to', 'of', 'and', 'a', 'in', 'that', 'have', 'i',
             'it', 'for', 'not', 'on', 'with', 'he', 'as', 'you', 'do', 'at',
             'this', 'but', 'his', 'by', 'from', 'they', 'we', 'say', 'her', 'she',
-            'or', 'an', 'will', 'my', 'one', 'all', 'would', 'there', 'their'
+            'or', 'an', 'will', 'my', 'one', 'all', 'would', 'there', 'their',
+            'was', 'are', 'been', 'has', 'had', 'were', 'said', 'can', 'what', 'so'
         }
     
     def decrypt_with_key(self, ciphertext, key):
@@ -28,42 +36,55 @@ class CaesarCipher:
         
         for char in ciphertext:
             if char.isupper():
-                # Chữ hoa A-Z
                 shifted = (ord(char) - ord('A') - key) % 26
                 plaintext.append(chr(shifted + ord('A')))
             elif char.islower():
-                # Chữ thường a-z
                 shifted = (ord(char) - ord('a') - key) % 26
                 plaintext.append(chr(shifted + ord('a')))
             else:
-                # Giữ nguyên ký tự khác (dấu câu, số, khoảng trắng)
                 plaintext.append(char)
         
         return ''.join(plaintext)
     
     def calculate_frequency_score(self, text):
-        """Tính điểm dựa trên tần suất chữ cái"""
+        """Tính điểm dựa trên tần suất chữ cái (chi-squared test)"""
         text_lower = text.lower()
         letter_count = {}
         total_letters = 0
         
-        # Đếm tần suất
         for char in text_lower:
             if char.isalpha():
                 letter_count[char] = letter_count.get(char, 0) + 1
                 total_letters += 1
         
         if total_letters == 0:
-            return 0
+            return float('inf')
         
-        # Tính chi-squared statistic
-        score = 0
+        # Chi-squared statistic - càng gần 0 càng giống tiếng Anh
+        chi_squared = 0
         for letter in 'abcdefghijklmnopqrstuvwxyz':
             observed = letter_count.get(letter, 0) / total_letters * 100
             expected = self.english_freq[letter]
-            score += ((observed - expected) ** 2) / expected
+            chi_squared += ((observed - expected) ** 2) / expected
         
-        return score
+        return chi_squared
+    
+    def calculate_bigram_score(self, text):
+        """Tính điểm dựa trên bigrams phổ biến"""
+        text_lower = ''.join(c for c in text.lower() if c.isalpha())
+        
+        if len(text_lower) < 2:
+            return 0
+        
+        bigram_count = 0
+        total_bigrams = len(text_lower) - 1
+        
+        for i in range(len(text_lower) - 1):
+            bigram = text_lower[i:i+2]
+            if bigram in self.common_bigrams:
+                bigram_count += 1
+        
+        return (bigram_count / total_bigrams * 100) if total_bigrams > 0 else 0
     
     def calculate_word_score(self, text):
         """Tính điểm dựa trên số từ hợp lệ"""
@@ -79,42 +100,55 @@ class CaesarCipher:
         """Loại bỏ dấu câu khỏi từ"""
         return ''.join(char for char in word if char.isalpha())
     
+    def calculate_composite_score(self, freq_score, bigram_score, word_score):
+        """
+        Tính điểm tổng hợp với trọng số cải tiến
+        Score càng THẤP càng TỐT
+        """
+        # Normalize frequency score (chi-squared thường trong khoảng 0-1000+)
+        normalized_freq = freq_score / 10
+        
+        # Word score và bigram score càng cao càng tốt, nên đảo ngược
+        word_penalty = 100 - word_score
+        bigram_penalty = 100 - bigram_score
+        
+        # Trọng số: word > bigram > frequency
+        composite = (word_penalty * 3.0) + (bigram_penalty * 2.0) + (normalized_freq * 1.0)
+        
+        return composite
+    
     def brute_force(self, ciphertext):
         """
         Thử tất cả 26 khóa và trả về kết quả tốt nhất
-        Returns: (key, plaintext, score)
+        Returns: (key, plaintext, results)
         """
-        best_key = 0
-        best_plaintext = ""
-        best_score = float('inf')
-        
         results = []
         
         for key in range(26):
             plaintext = self.decrypt_with_key(ciphertext, key)
             
-            # Tính điểm tổng hợp
+            # Tính các điểm thành phần
             freq_score = self.calculate_frequency_score(plaintext)
+            bigram_score = self.calculate_bigram_score(plaintext)
             word_score = self.calculate_word_score(plaintext)
             
-            # Điểm càng thấp càng tốt (chi-squared)
-            # Điểm từ càng cao càng tốt
-            combined_score = freq_score - (word_score * 5)  # Ưu tiên word score
+            # Tính điểm tổng hợp
+            composite_score = self.calculate_composite_score(freq_score, bigram_score, word_score)
             
             results.append({
                 'key': key,
                 'plaintext': plaintext,
                 'freq_score': freq_score,
+                'bigram_score': bigram_score,
                 'word_score': word_score,
-                'combined_score': combined_score
+                'composite_score': composite_score
             })
-            
-            if combined_score < best_score:
-                best_score = combined_score
-                best_key = key
-                best_plaintext = plaintext
         
-        return best_key, best_plaintext, results
+        # Sắp xếp theo composite score (thấp nhất = tốt nhất)
+        results.sort(key=lambda x: x['composite_score'])
+        
+        best_result = results[0]
+        return best_result['key'], best_result['plaintext'], results
     
     def crack(self, ciphertext):
         """
@@ -123,16 +157,15 @@ class CaesarCipher:
         """
         key, plaintext, all_results = self.brute_force(ciphertext)
         
-        # In ra top 3 kết quả tốt nhất để kiểm tra
-        print("\n=== Top 3 Candidates ===")
-        sorted_results = sorted(all_results, key=lambda x: x['combined_score'])
+        # In ra top 5 kết quả tốt nhất
+        print("\n=== Top 5 Candidates ===")
         
-        for i, result in enumerate(sorted_results[:3], 1):
+        for i, result in enumerate(all_results[:5], 1):
             print(f"\n#{i} - Key: {result['key']}")
-            print(f"Word Score: {result['word_score']:.2f}%")
-            print(f"Frequency Score: {result['freq_score']:.2f}")
-            preview = result['plaintext'][:200].replace('\n', ' ')
-            print(f"Preview: {preview}...")
+            print(f"  Word Score: {result['word_score']:.1f}% | Bigram Score: {result['bigram_score']:.1f}%")
+            print(f"  Freq Score: {result['freq_score']:.2f} | Composite: {result['composite_score']:.2f}")
+            preview = result['plaintext'][:150].replace('\n', ' ')
+            print(f"  Preview: {preview}...")
         
         return key, plaintext
 
@@ -140,13 +173,11 @@ class CaesarCipher:
 def crack_from_file(input_file, output_file):
     """
     Crack Caesar cipher từ file và ghi kết quả
-    Theo đúng format yêu cầu của Lab06
     
     Output format:
     - Dòng 1: khóa k
     - Dòng 2+: plaintext
     """
-    # Đọc ciphertext
     print(f"Reading ciphertext from: {input_file}")
     with open(input_file, 'r', encoding='utf-8') as f:
         ciphertext = f.read()
@@ -157,14 +188,25 @@ def crack_from_file(input_file, output_file):
     cipher = CaesarCipher()
     key, plaintext = cipher.crack(ciphertext)
     
-    # Ghi kết quả theo format yêu cầu
+    # Ghi kết quả
     with open(output_file, 'w', encoding='utf-8') as f:
-        # Dòng 1: khóa
         f.write(f"{key}\n")
-        # Dòng 2+: plaintext
         f.write(plaintext)
     
     print(f"\n✓ Results saved to: {output_file}")
-    print(f"Found key: {key}")
+    print(f"✓ Best key found: {key}")
     
     return key, plaintext
+
+
+# Test với ví dụ
+if __name__ == "__main__":
+    # Ví dụ test nhanh
+    cipher = CaesarCipher()
+    
+    # Test case
+    test_ciphertext = "Wkh txlfn eurzq ira mxpsv ryhu wkh odcb grj"
+    print("Test Ciphertext:", test_ciphertext)
+    key, plaintext = cipher.crack(test_ciphertext)
+    print(f"\n✓ FINAL ANSWER: Key = {key}")
+    print(f"✓ Plaintext: {plaintext}")
