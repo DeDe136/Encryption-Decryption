@@ -101,7 +101,7 @@ Sau khi có chuỗi kết quả từ thuật toán (chỉ gồm các ký tự in
 >* **Phân tích:**
 >    * `H`: Hợp lệ.
 >    * `ế`: Không hợp lệ (Bỏ qua).
->    * ` ` (cách): Không hợp lệ (Bỏ qua).
+>    * `⎵` (cách): Không hợp lệ (Bỏ qua).
 >    * `l`: Hợp lệ.
 >    * `ô`: Không hợp lệ (Bỏ qua).
 >* **Pre-process:** Chỉ còn chuỗi `Hl` → cặp `HL`.
@@ -109,7 +109,7 @@ Sau khi có chuỗi kết quả từ thuật toán (chỉ gồm các ký tự in
 >* **Reconstruct (Ghép lại):**
 >    * `H` → thay bằng `A`.
 >    * `ế` → giữ nguyên `ế`.
->    * ` ` → giữ nguyên ` `.
+>    * `⎵` → giữ nguyên `⎵`.
 >    * `l` → thay bằng `b` (viết thường theo gốc).
 >    * `ô` → giữ nguyên `ô`.
 >* **Output:** `Aế bô`
