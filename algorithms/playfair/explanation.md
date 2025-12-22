@@ -86,11 +86,33 @@ Sau khi có chuỗi kết quả từ thuật toán (chỉ gồm các ký tự in
 3.  **Nếu là ký tự đặc biệt/có dấu:**
     * Giữ nguyên ký tự đó tại vị trí cũ.
 
-> **Ví dụ:**
-> * Input: `Hế lô`
-> * Pre-process (5x5): `HE LO` (Bỏ qua 'ế' và dấu cách) -> `HE LO`
-> * Mã hóa: `KC QA`
-> * Reconstruct: `Kế lQ` (Chữ 'ế' và dấu cách được đặt lại đúng chỗ, K và Q giữ nguyên case).
+>### 💡 VÍ DỤ MINH HỌA (Đúng với Code)
+>
+>Giả sử Sep1="X", Sep2="Y". Ma trận 5x5.
+>
+>**Trường hợp 1: Input tiếng Anh (Có cặp trùng)**
+>* **Input:** `HELLO`
+>* **Pre-process:** `HE` `LL` (trùng L) → tách thành `HE LX LO`
+>* **Mã hóa:** Giả sử `HE`->`KC`, `LX`->`RV`, `LO`->`QA`
+>* **Output:** `KCRVQA`
+>
+>**Trường hợp 2: Input tiếng Việt có dấu**
+>* **Input:** `Hế lô`
+>* **Phân tích:**
+>    * `H`: Hợp lệ.
+>    * `ế`: Không hợp lệ (Bỏ qua).
+>    * ` ` (cách): Không hợp lệ (Bỏ qua).
+>    * `l`: Hợp lệ.
+>    * `ô`: Không hợp lệ (Bỏ qua).
+>* **Pre-process:** Chỉ còn chuỗi `Hl` → cặp `HL`.
+>* **Mã hóa cặp HL:** Giả sử ra `AB`.
+>* **Reconstruct (Ghép lại):**
+>    * `H` → thay bằng `A`.
+>    * `ế` → giữ nguyên `ế`.
+>    * ` ` → giữ nguyên ` `.
+>    * `l` → thay bằng `b` (viết thường theo gốc).
+>    * `ô` → giữ nguyên `ô`.
+>* **Output:** `Aế bô`
 
 ---
 
