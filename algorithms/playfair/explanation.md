@@ -86,7 +86,7 @@ Sau khi có chuỗi kết quả từ thuật toán (chỉ gồm các ký tự in
 3.  **Nếu là ký tự đặc biệt/có dấu:**
     * Giữ nguyên ký tự đó tại vị trí cũ.
 
->### 💡 VÍ DỤ MINH HỌA (Đúng với Code)
+>### 💡 VÍ DỤ MINH HỌA
 >
 >Giả sử Sep1="X", Sep2="Y". Ma trận 5x5.
 >
