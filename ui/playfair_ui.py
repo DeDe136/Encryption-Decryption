@@ -277,7 +277,7 @@ class ModernPlayfairUI(QMainWindow):
         left_panel.addStretch()
 
         # 5. Buttons
-        self.btn_run = self.create_button("▶ Run", "#16a34a", "#15803d")
+        self.btn_run = self.create_button("▶ Excute", "#16a34a", "#15803d")
         self.btn_clear = self.create_button("🗑 Clear All", "#ef4444", "#dc2626")
         self.btn_cancel_left = self.create_button("← Cancel", "#6b7280", "#4b5563")
 
@@ -409,7 +409,7 @@ class ModernPlayfairUI(QMainWindow):
         # 4. Buttons Right
         bottom_btns = QHBoxLayout()
         self.btn_save = self.create_button("💾 Save", "#2563eb", "#1d4ed8")
-        self.btn_info = self.create_button("💡 Learn Algorithm", "#fbbf24", "#d97706")
+        self.btn_info = self.create_button("💡 Learn Algorithm", "#efb114", "#d97706")
 
         bottom_btns.addWidget(self.btn_save)
         bottom_btns.addWidget(self.btn_info)
